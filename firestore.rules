@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidVehicle(data) {
+      return data.keys().hasAll(['vehicleId', 'type', 'status'])
+        && data.keys().size() <= 4
+        && data.vehicleId is string && data.vehicleId.size() <= 50
+        && data.type in ['Truck', 'Van', 'Bike']
+        && data.status in ['On Trip', 'Available', 'In Shop']
+        && (!data.keys().hasAny(['lastUpdated']) || data.lastUpdated is timestamp);
+    }
+
+    function isValidTrip(data) {
+      return data.keys().hasAll(['tripId', 'destination', 'status'])
+        && data.keys().size() <= 4
+        && data.tripId is string && data.tripId.size() <= 50
+        && data.destination is string && data.destination.size() <= 100
+        && data.status in ['In Transit', 'Pending', 'Loading', 'Completed']
+        && (!data.keys().hasAny(['createdAt']) || data.createdAt is timestamp);
+    }
+
+    function isValidDriver(data) {
+      return data.keys().hasAll(['name', 'licenseStatus', 'status'])
+        && data.keys().size() == 3
+        && data.name is string && data.name.size() <= 100
+        && data.licenseStatus in ['Valid', 'Expiring Soon', 'Invalid']
+        && data.status in ['On Duty', 'Off Duty'];
+    }
+
+    function isValidMaintenance(data) {
+      return data.keys().hasAll(['vehicleId', 'serviceType', 'cost'])
+        && data.keys().size() <= 4
+        && data.vehicleId is string && data.vehicleId.size() <= 50
+        && data.serviceType is string && data.serviceType.size() <= 100
+        && data.cost is number && data.cost >= 0
+        && (!data.keys().hasAny(['date']) || data.date is timestamp);
+    }
+
+    function isValidFuelLog(data) {
+      return data.keys().hasAll(['vehicleId', 'liters', 'cost'])
+        && data.keys().size() <= 4
+        && data.vehicleId is string && data.vehicleId.size() <= 50
+        && data.liters is number && data.liters > 0
+        && data.cost is number && data.cost >= 0
+        && (!data.keys().hasAny(['date']) || data.date is timestamp);
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() && isValidId(vehicleId) && isValidVehicle(incoming());
+      allow update: if isEmailVerified() && isValidVehicle(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastUpdated'])
+      );
+      allow delete: if false;
+    }
+
+    match /trips/{tripId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() && isValidId(tripId) && isValidTrip(incoming());
+      allow update: if isEmailVerified() && isValidTrip(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+      );
+      allow delete: if false;
+    }
+
+    match /drivers/{driverId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() && isValidId(driverId) && isValidDriver(incoming());
+      allow update: if isEmailVerified() && isValidDriver(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'licenseStatus'])
+      );
+      allow delete: if false;
+    }
+
+    match /maintenance/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() && isValidId(logId) && isValidMaintenance(incoming());
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /fuelLogs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() && isValidId(logId) && isValidFuelLog(incoming());
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

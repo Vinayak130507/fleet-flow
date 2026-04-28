@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "A fleet vehicle",
+      "type": "object",
+      "properties": {
+        "vehicleId": { "type": "string" },
+        "type": { "type": "string", "enum": ["Truck", "Van", "Bike"] },
+        "status": { "type": "string", "enum": ["On Trip", "Available", "In Shop"] },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vehicleId", "type", "status"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "A delivery trip",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "destination": { "type": "string" },
+        "status": { "type": "string", "enum": ["In Transit", "Pending", "Loading", "Completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tripId", "destination", "status"]
+    },
+    "Driver": {
+      "title": "Driver",
+      "description": "A fleet driver",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "licenseStatus": { "type": "string", "enum": ["Valid", "Expiring Soon", "Invalid"] },
+        "status": { "type": "string", "enum": ["On Duty", "Off Duty"] }
+      },
+      "required": ["name", "licenseStatus", "status"]
+    },
+    "Maintenance": {
+      "title": "Maintenance",
+      "description": "Vehicle maintenance record",
+      "type": "object",
+      "properties": {
+        "vehicleId": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "cost": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vehicleId", "serviceType", "cost"]
+    },
+    "FuelLog": {
+      "title": "Fuel Log",
+      "description": "Fuel consumption log",
+      "type": "object",
+      "properties": {
+        "vehicleId": { "type": "string" },
+        "liters": { "type": "number" },
+        "cost": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vehicleId", "liters", "cost"]
+    }
+  },
+  "firestore": {
+    "vehicles": {
+      "schema": "Vehicle",
+      "description": "Collection of fleet vehicles"
+    },
+    "trips": {
+      "schema": "Trip",
+      "description": "Collection of delivery trips"
+    },
+    "drivers": {
+      "schema": "Driver",
+      "description": "Collection of fleet drivers"
+    },
+    "maintenance": {
+      "schema": "Maintenance",
+      "description": "Collection of maintenance records"
+    },
+    "fuelLogs": {
+      "schema": "FuelLog",
+      "description": "Collection of fuel consumption logs"
+    }
+  }
+}
